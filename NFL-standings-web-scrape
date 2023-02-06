@@ -1,0 +1,28 @@
+import requests
+from bs4 import BeautifulSoup
+import re
+import pandas as pd
+
+# create a variable to hold the url I want to scrape
+url = 'https://www.nfl.com/standings/league/2021/REG'
+# check the request status, to ensure we can collect data
+page = requests.get(url) 
+
+# create a variable that pulls the HTML doc
+soup = BeautifulSoup(page.text, 'lxml')
+
+#the full class name is too long, so I used re.compile to snag most of it
+nfl_standings = soup.find('table', class_ = re.compile('d3-o-table d3-o-table--row-striping d3-o-table--detailed d3-o-standings--de'))
+
+headers = []
+for i in nfl_standings.find_all('th'):
+    standings = i.text
+    headers.append(standings)
+    
+df = pd.DataFrame(columns = headers)
+
+for j in nfl_standings.find_all('tr')[1:]:
+    row_data = j.find_all('td')
+    row = [tr.text for tr in row_data]
+    length = len(df)
+    df.loc[length] = row
