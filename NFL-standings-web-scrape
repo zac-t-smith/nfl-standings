@@ -11,18 +11,34 @@ page = requests.get(url)
 # create a variable that pulls the HTML doc
 soup = BeautifulSoup(page.text, 'lxml')
 
-#the full class name is too long, so I used re.compile to snag most of it
-nfl_standings = soup.find('table', class_ = re.compile('d3-o-table d3-o-table--row-striping d3-o-table--detailed d3-o-standings--de'))
+# created a variable "table" to call the table for nfl standings
+table = soup.find('table', {'summary':'Standings - Detailed View'})
 
+# created an empty string to hold the headers in
 headers = []
-for i in nfl_standings.find_all('th'):
-    standings = i.text
-    headers.append(standings)
-    
+# for looop to go through all 'th' 
+for i in table.find_all('th'):
+    # created a vvariable 'title' to hold the header titles, 
+    # make them a string, and remove whitespace
+    title = i.text.strip()
+    # push the header titles into the empty string
+    headers.append(title)
+
+# created variable to create a data frame for headers
 df = pd.DataFrame(columns = headers)
 
-for j in nfl_standings.find_all('tr')[1:]:
-    row_data = j.find_all('td')
-    row = [tr.text for tr in row_data]
+# for loop to target the table rows and data in the table
+# we're also exlcuding the first 'tr' because it's part of the header, which we already have 
+for row in table.find_all('tr')[1:]:
+    # created variable "first_td" to remove duplicate names for teams 
+    first_td = row.find_all('td')[0].find('div', class_ = 'd3-o-club-fullname').text.strip()
+    #created variable 'data' to hold all data in 'td'
+    data = row.find_all('td')[1:]
+    # for loop searching throw 'td' under 'tr', making it a text, and then removing whitespaces 
+    row_data = [td.text.strip() for td in data]
+    # inserting the td date into the beginning of our data list
+    row_data.insert(0, first_td)
+    # variable to identify the length needed for the data frame 
     length = len(df)
-    df.loc[length] = row
+    # making the length of the data frame equal to the amount of rows needed
+    df.loc[length] = row_data
